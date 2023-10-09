@@ -26,8 +26,8 @@ type Config struct {
 	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
 	SimilarityThreshold float32  `json:"similarityThreshold"`
 
-	ConfidencesNotLessThan []string `json:"confidencesNotLessThan"`
-	ConfidencesNotMoreThan []string  `json:"confidencesNotMoreThan"`
+	ConfidencesNotLessThan           []string `json:"confidencesNotLessThan"`
+	ConfidencesNotMoreThan           []string `json:"confidencesNotMoreThan"`
 	ConfidencesNotLessThanNormalized map[string]string
 	ConfidencesNotMoreThanNormalized map[string]string
 }
@@ -66,7 +66,6 @@ func Parse(args []string) (*Config, error) {
 		l.Infof("Found config %s, using values provided the config file.", configFile)
 	}
 
-
 	conf := &Config{
 		MqttTopic:                v.GetString(MqttTopicKey),
 		MqttBroker:               v.GetString(MqttBrokerKey),
@@ -88,11 +87,11 @@ func Parse(args []string) (*Config, error) {
 	if err := validate.Struct(conf); err != nil {
 		l.Fatalf("Missing required attributes %v\n", err)
 	}
-	for _,label := range conf.ConfidencesNotLessThan {
+	for _, label := range conf.ConfidencesNotLessThan {
 		s := strings.Split(label, ":")
 		conf.ConfidencesNotLessThanNormalized[s[0]] = s[1]
 	}
-	for _,label := range conf.ConfidencesNotMoreThan {
+	for _, label := range conf.ConfidencesNotMoreThan {
 		s := strings.Split(label, ":")
 		conf.ConfidencesNotMoreThanNormalized[s[0]] = s[1]
 	}
