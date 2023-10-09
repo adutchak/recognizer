@@ -87,6 +87,8 @@ func Parse(args []string) (*Config, error) {
 	if err := validate.Struct(conf); err != nil {
 		l.Fatalf("Missing required attributes %v\n", err)
 	}
+	conf.ConfidencesNotLessThanNormalized = make(map[string]string)
+	conf.ConfidencesNotMoreThanNormalized = make(map[string]string)
 	for _, label := range conf.ConfidencesNotLessThan {
 		s := strings.Split(label, ":")
 		conf.ConfidencesNotLessThanNormalized[s[0]] = s[1]
