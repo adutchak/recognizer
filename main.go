@@ -14,6 +14,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -24,6 +25,7 @@ func main() {
 	if err != nil {
 		l.Fatalf("could not load the configuration, %v", err)
 	}
+	l.Infof("loaded config %s", awsutil.Prettify(configuration))
 
 	recognizeClient, err := aws.GetRekognitionClient()
 	if err != nil {
