@@ -26,8 +26,10 @@ type Config struct {
 	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
 	SimilarityThreshold float32  `json:"similarityThreshold"`
 
-	ConfidencesNotLessThan map[string]string `json:"confidencesNotLessThan"`
-	ConfidencesNotMoreThan map[string]string `json:"confidencesNotMoreThan"`
+	ConfidencesNotLessThan []string `json:"confidencesNotLessThan"`
+	ConfidencesNotMoreThan []string  `json:"confidencesNotMoreThan"`
+	ConfidencesNotLessThanNormalized map[string]string
+	ConfidencesNotMoreThanNormalized map[string]string
 }
 
 func NewConfig() (*Config, error) {
@@ -78,14 +80,21 @@ func Parse(args []string) (*Config, error) {
 		TargetImagePath:        v.GetString(TargetImagePathKey),
 		SampleImagePaths:       v.GetStringSlice(SampleImagePathsKey),
 		SimilarityThreshold:    float32(v.GetFloat64(SimilarityThresholdKey)),
-		ConfidencesNotLessThan: v.GetStringMapString(ConfidencesNotLessThanKey),
-		ConfidencesNotMoreThan: v.GetStringMapString(ConfidencesNotMoreThanKey),
+		ConfidencesNotLessThan: v.GetStringSlice(ConfidencesNotLessThanKey),
+		ConfidencesNotMoreThan: v.GetStringSlice(ConfidencesNotMoreThanKey),
 	}
 
 	validate := validator.New()
 	if err := validate.Struct(conf); err != nil {
 		l.Fatalf("Missing required attributes %v\n", err)
 	}
-
+	for _,label := range conf.ConfidencesNotLessThan {
+		s := strings.Split(label, ":")
+		conf.ConfidencesNotLessThanNormalized[s[0]] = s[1]
+	}
+	for _,label := range conf.ConfidencesNotMoreThan {
+		s := strings.Split(label, ":")
+		conf.ConfidencesNotMoreThanNormalized[s[0]] = s[1]
+	}
 	return conf, nil
 }

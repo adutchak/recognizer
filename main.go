@@ -113,7 +113,7 @@ func main() {
 			var labelsPassed bool
 		out:
 			for _, label := range labelsOutput.Labels {
-				for labelName, threshold := range configuration.ConfidencesNotLessThan {
+				for labelName, threshold := range configuration.ConfidencesNotLessThanNormalized {
 					labelsPassed, err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
 					if err != nil {
 						l.Error(err)
@@ -121,7 +121,7 @@ func main() {
 					}
 				}
 
-				for labelName, threshold := range configuration.ConfidencesNotMoreThan {
+				for labelName, threshold := range configuration.ConfidencesNotMoreThanNormalized {
 					labelsPassed, err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
 					if err != nil {
 						l.Error(err)

@@ -30,7 +30,7 @@ func BuildFlagSet() *pflag.FlagSet {
 	fs.String(TargetImagePathKey, "", "specifies the target image path to work with")
 	fs.StringSlice(SampleImagePathsKey, []string{}, "specifies the target image path to work with")
 	fs.Float32(SimilarityThresholdKey, DefaultConfig.SimilarityThreshold, "specifies the minimal similarity threshold")
-	fs.StringToString(ConfidencesNotLessThanKey, map[string]string{}, "specifies labels whose recognized confidence should not be less than threshold")
-	fs.StringToString(ConfidencesNotMoreThanKey, map[string]string{}, "specifies labels whose recognized confidence should be more than threshold")
+	fs.StringSlice(ConfidencesNotLessThanKey, []string{}, "specifies labels whose recognized confidence should not be less than threshold, example: \"Photography:98.0 Fisheye:60.0\"")
+	fs.StringSlice(ConfidencesNotMoreThanKey, []string{}, "specifies labels whose recognized confidence should be more than threshold, example: \"Electronics:90.0 Phone:40.0\"")
 	return fs
 }
