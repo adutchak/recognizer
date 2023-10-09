@@ -97,8 +97,10 @@ func main() {
 			}
 			if len(output.FaceDetails) == 0 {
 				l.Warn("no faces detected")
-				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
-				continue
+				if !configuration.DiscoveryMode {
+					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+					continue
+				}
 			}
 
 			detectLabelsInputs := rekognition.DetectLabelsInput{
