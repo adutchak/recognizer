@@ -1,0 +1,229 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/adutchak/recognizer/pkg/aws"
+	"github.com/adutchak/recognizer/pkg/config"
+	"github.com/adutchak/recognizer/pkg/logging"
+	"github.com/adutchak/recognizer/pkg/mqttclient"
+
+	"github.com/aws/aws-sdk-go-v2/service/rekognition"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+func main() {
+	ctx := context.Background()
+	l := logging.WithContext(ctx)
+	configuration, err := config.NewConfig()
+	if err != nil {
+		l.Fatalf("could not load the configuration, %v", err)
+	}
+
+	recognizeClient, err := aws.GetRekognitionClient()
+	if err != nil {
+		message := "cannot initialize AWS recognize client"
+		l.Fatal(message)
+		return
+	}
+
+	var rekognitionInputs []map[string]rekognition.CompareFacesInput
+	for _, sample := range configuration.SampleImagePaths {
+		targeBytes, err := os.ReadFile(sample)
+		if err != nil {
+			l.Errorf("Error reading file %s: %v", sample, err)
+			return
+		}
+
+		targetImage := types.Image{
+			Bytes: targeBytes,
+		}
+
+		compareFacesInput := rekognition.CompareFacesInput{
+			TargetImage:         &targetImage,
+			SimilarityThreshold: &configuration.SimilarityThreshold,
+			QualityFilter:       "AUTO",
+		}
+		element := map[string]rekognition.CompareFacesInput{
+			sample: compareFacesInput,
+		}
+		rekognitionInputs = append(rekognitionInputs, element)
+	}
+	l.Info("starting recognizer")
+
+	doneChan := make(chan bool)
+	go func(doneChan chan bool) {
+		defer func() {
+			doneChan <- true
+		}()
+		for {
+			err := waitForFile(configuration.TargetImagePath)
+			if err != nil {
+				l.Error(err)
+				continue
+			}
+			mqttClient, err := mqttclient.GetMqttClient(configuration)
+			if err != nil {
+				l.Errorf("Error getting mqttClient %v", err)
+				continue
+			}
+
+			sourceBytes, err := os.ReadFile(configuration.TargetImagePath)
+			if err != nil {
+				l.Errorf("Error reading file %s: %v", configuration.TargetImagePath, err)
+				removeFile(configuration.TargetImagePath)
+				continue
+			}
+			sourceImage := types.Image{
+				Bytes: sourceBytes,
+			}
+			// should delete the file as soon as possible
+			removeFile(configuration.TargetImagePath)
+			detectFacesInput := rekognition.DetectFacesInput{
+				Image: &sourceImage,
+			}
+			// recognizeClient.CreateFaceLivenessSession()
+			output, err := recognizeClient.DetectFaces(ctx, &detectFacesInput)
+			if err != nil {
+				l.Error("Error detecting face", err)
+				continue
+			}
+			if len(output.FaceDetails) == 0 {
+				l.Warn("no faces detected")
+				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+				continue
+			}
+
+			detectLabelsInputs := rekognition.DetectLabelsInput{
+				Image: &sourceImage,
+			}
+			labelsOutput, err := recognizeClient.DetectLabels(ctx, &detectLabelsInputs)
+			if err != nil {
+				l.Error("Error detecting labels", err)
+				continue
+			}
+
+			var labelsPassed bool
+		out:
+			for _, label := range labelsOutput.Labels {
+				for labelName, threshold := range configuration.ConfidencesNotLessThan {
+					labelsPassed, err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
+					if err != nil {
+						l.Error(err)
+						break out
+					}
+				}
+
+				for labelName, threshold := range configuration.ConfidencesNotMoreThan {
+					labelsPassed, err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
+					if err != nil {
+						l.Error(err)
+						break out
+					}
+				}
+			}
+
+			if !labelsPassed {
+				l.Error("some of the labels did not pass confidence level")
+				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+				continue
+			}
+
+			atLeastOneMatchFound := false
+			for _, rekognitionInput := range rekognitionInputs {
+				comparedFileName := ""
+				compareFacesInput := rekognition.CompareFacesInput{}
+				for filename, input := range rekognitionInput {
+					input.SourceImage = &sourceImage
+					compareFacesInput = input
+					comparedFileName = filename
+				}
+
+				output, err := recognizeClient.CompareFaces(ctx, &compareFacesInput)
+				if err != nil {
+					l.Error("Error comparing images", err)
+					continue
+				}
+
+				if len(output.FaceMatches) > 0 {
+					atLeastOneMatchFound = true
+					l.Infof("recognized snapshot as %s", comparedFileName)
+					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttRecognizedMessage)
+					break
+				} else {
+					l.Warnf("did not recognize the caller as %s", comparedFileName)
+				}
+			}
+			if !atLeastOneMatchFound {
+				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+			}
+		}
+	}(doneChan)
+
+	<-doneChan
+}
+
+func publishMqttMessage(client mqtt.Client, topic string, message interface{}) {
+	ctx := context.Background()
+	l := logging.WithContext(ctx)
+	token := client.Publish(topic, 0, false, message)
+	token.Wait()
+	l.Infof("published message (%s) to MQTT topic %s", message, topic)
+	client.Disconnect(250)
+}
+
+func waitForFile(filePath string) error {
+	for {
+		_, err := os.Stat(filePath)
+		if err != nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
+	}
+
+	return nil
+}
+
+func removeFile(filename string) {
+	ctx := context.Background()
+	l := logging.WithContext(ctx)
+	err := os.Remove(filename)
+	if err != nil {
+		l.Error(err)
+	}
+	l.Infof("removed file %s", filename)
+}
+
+func verifyLabelConfidenceNotLessThan(label types.Label, labelName string, confidence string) (bool, error) {
+	var confidenceFloat64 float64
+
+	confidenceFloat64, err := strconv.ParseFloat(confidence, 32)
+	if err != nil {
+		return false, err
+	}
+
+	if *label.Name == labelName && *label.Confidence < float32(confidenceFloat64) {
+		return false, fmt.Errorf("label %s has confidence less than %s (%f)", labelName, confidence, *label.Confidence)
+	}
+	return true, nil
+}
+
+func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confidence string) (bool, error) {
+	var confidenceFloat64 float64
+
+	confidenceFloat64, err := strconv.ParseFloat(confidence, 32)
+	if err != nil {
+		return false, err
+	}
+
+	if *label.Name == labelName && *label.Confidence > float32(confidenceFloat64) {
+		return false, fmt.Errorf("label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
+	}
+	return true, nil
+}
