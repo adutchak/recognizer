@@ -6,23 +6,24 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
 
 	"github.com/adutchak/recognizer/pkg/logging"
 )
 
 type Config struct {
-	MqttTopic                string `json:"mqttTopic"`
-	MqttBroker               string `json:"mqttBroker"`
+	MqttTopic                string `json:"mqttTopic" validate:"required"`
+	MqttBroker               string `json:"mqttBroker" validate:"required"`
 	MqttPort                 int    `json:"mqttPort"`
-	MqttClientId             string `json:"mqttClientId"`
-	MqttUsername             string `json:"mqttUsername"`
-	MqttPassword             string `json:"mqttPassword"`
+	MqttClientId             string `json:"mqttClientId" validate:"required"`
+	MqttUsername             string `json:"mqttUsername" validate:"required"`
+	MqttPassword             string `json:"mqttPassword" validate:"required"`
 	MqttRecognizedMessage    string `json:"mqttRecognizedMessage"`
 	MqttNotRecognizedMessage string `json:"mqttNotRecognizedMessage"`
 
-	TargetImagePath     string   `json:"targetImagePath"`
-	SampleImagePaths    []string `json:"sampleImagePaths"`
+	TargetImagePath     string   `json:"targetImagePath" validate:"required"`
+	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
 	SimilarityThreshold float32  `json:"similarityThreshold"`
 
 	ConfidencesNotLessThan map[string]string `json:"confidencesNotLessThan"`
@@ -63,7 +64,8 @@ func Parse(args []string) (*Config, error) {
 		l.Infof("Found config %s, using values provided the config file.", configFile)
 	}
 
-	return &Config{
+
+	conf := &Config{
 		MqttTopic:                v.GetString(MqttTopicKey),
 		MqttBroker:               v.GetString(MqttBrokerKey),
 		MqttPort:                 v.GetInt(MqttPortKey),
@@ -78,5 +80,12 @@ func Parse(args []string) (*Config, error) {
 		SimilarityThreshold:    float32(v.GetFloat64(SimilarityThresholdKey)),
 		ConfidencesNotLessThan: v.GetStringMapString(ConfidencesNotLessThanKey),
 		ConfidencesNotMoreThan: v.GetStringMapString(ConfidencesNotMoreThanKey),
-	}, nil
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(conf); err != nil {
+		l.Fatalf("Missing required attributes %v\n", err)
+	}
+
+	return conf, nil
 }

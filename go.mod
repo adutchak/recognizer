@@ -5,8 +5,11 @@ go 1.20
 require github.com/fsnotify/fsnotify v1.6.0
 
 require (
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
@@ -41,6 +44,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.21.5 // indirect
 	github.com/aws/smithy-go v1.14.2 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.3
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/spf13/viper v1.17.0
 	go.uber.org/multierr v1.10.0 // indirect
