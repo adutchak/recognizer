@@ -26,10 +26,11 @@ type Config struct {
 	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
 	SimilarityThreshold float32  `json:"similarityThreshold"`
 
-	ConfidencesNotLessThan           []string `json:"confidencesNotLessThan"`
-	ConfidencesNotMoreThan           []string `json:"confidencesNotMoreThan"`
-	ConfidencesNotLessThanNormalized map[string]string
-	ConfidencesNotMoreThanNormalized map[string]string
+	ConfidencesNotLessThan string `json:"confidencesNotLessThan"`
+	ConfidencesNotMoreThan string `json:"confidencesNotMoreThan"`
+
+	ConfidencesNotLessThanNormalized map[string]string `json:"confidencesNotLessThanNormalized"`
+	ConfidencesNotMoreThanNormalized map[string]string `json:"confidencesNotMoreThanNormalized"`
 }
 
 func NewConfig() (*Config, error) {
@@ -79,8 +80,8 @@ func Parse(args []string) (*Config, error) {
 		TargetImagePath:        v.GetString(TargetImagePathKey),
 		SampleImagePaths:       v.GetStringSlice(SampleImagePathsKey),
 		SimilarityThreshold:    float32(v.GetFloat64(SimilarityThresholdKey)),
-		ConfidencesNotLessThan: v.GetStringSlice(ConfidencesNotLessThanKey),
-		ConfidencesNotMoreThan: v.GetStringSlice(ConfidencesNotMoreThanKey),
+		ConfidencesNotLessThan: v.GetString(ConfidencesNotLessThanKey),
+		ConfidencesNotMoreThan: v.GetString(ConfidencesNotMoreThanKey),
 	}
 
 	validate := validator.New()
@@ -89,13 +90,21 @@ func Parse(args []string) (*Config, error) {
 	}
 	conf.ConfidencesNotLessThanNormalized = make(map[string]string)
 	conf.ConfidencesNotMoreThanNormalized = make(map[string]string)
-	for _, label := range conf.ConfidencesNotLessThan {
+
+	confidencesNotLessThan := strings.Split(conf.ConfidencesNotLessThan, ",")
+	confidencesNotMoreThan := strings.Split(conf.ConfidencesNotMoreThan, ",")
+
+	for _, label := range confidencesNotLessThan {
 		s := strings.Split(label, ":")
-		conf.ConfidencesNotLessThanNormalized[s[0]] = s[1]
+		if len(s) == 2 {
+			conf.ConfidencesNotLessThanNormalized[s[0]] = s[1]
+		}
 	}
-	for _, label := range conf.ConfidencesNotMoreThan {
+	for _, label := range confidencesNotMoreThan {
 		s := strings.Split(label, ":")
-		conf.ConfidencesNotMoreThanNormalized[s[0]] = s[1]
+		if len(s) == 2 {
+			conf.ConfidencesNotMoreThanNormalized[s[0]] = s[1]
+		}
 	}
 	return conf, nil
 }
