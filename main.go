@@ -96,7 +96,7 @@ func main() {
 				continue
 			}
 			if len(output.FaceDetails) == 0 {
-				l.Warn("no faces detected")
+				l.Errorf("no faces detected in the image: %s", configuration.TargetImagePath)
 				if !configuration.DiscoveryMode {
 					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
 					continue
@@ -175,6 +175,8 @@ func main() {
 					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
 				}
 			}
+
+			mqttClient.Disconnect(250)
 		}
 	}(doneChan)
 

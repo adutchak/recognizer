@@ -108,5 +108,8 @@ func Parse(args []string) (*Config, error) {
 			conf.ConfidencesNotMoreThanNormalized[s[0]] = s[1]
 		}
 	}
+	if conf.DiscoveryMode {
+		l.Warn("RUNNING APPLICATION IN DISCOVERY MODE")
+	}
 	return conf, nil
 }
