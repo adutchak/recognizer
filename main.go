@@ -109,6 +109,9 @@ func main() {
 				l.Error("Error detecting labels", err)
 				continue
 			}
+			if configuration.DiscoveryMode {
+				l.Infof("DetectLabels output:\n%s", awsutil.Prettify(labelsOutput))
+			}
 
 			var labelsPassed bool
 		out:
@@ -132,8 +135,10 @@ func main() {
 
 			if !labelsPassed {
 				l.Error("some of the labels did not pass confidence level")
-				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
-				continue
+				if !configuration.DiscoveryMode {
+					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+					continue
+				}
 			}
 
 			atLeastOneMatchFound := false
@@ -155,14 +160,18 @@ func main() {
 				if len(output.FaceMatches) > 0 {
 					atLeastOneMatchFound = true
 					l.Infof("recognized snapshot as %s", comparedFileName)
-					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttRecognizedMessage)
+					if !configuration.DiscoveryMode {
+						publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttRecognizedMessage)
+					}
 					break
 				} else {
 					l.Warnf("did not recognize the caller as %s", comparedFileName)
 				}
 			}
 			if !atLeastOneMatchFound {
-				publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+				if !configuration.DiscoveryMode {
+					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
+				}
 			}
 		}
 	}(doneChan)

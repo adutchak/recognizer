@@ -13,6 +13,7 @@ import (
 )
 
 type Config struct {
+	DiscoveryMode            bool   `json:"discoveryMode"`
 	MqttTopic                string `json:"mqttTopic" validate:"required"`
 	MqttBroker               string `json:"mqttBroker" validate:"required"`
 	MqttPort                 int    `json:"mqttPort"`
@@ -82,6 +83,7 @@ func Parse(args []string) (*Config, error) {
 		SimilarityThreshold:    float32(v.GetFloat64(SimilarityThresholdKey)),
 		ConfidencesNotLessThan: v.GetString(ConfidencesNotLessThanKey),
 		ConfidencesNotMoreThan: v.GetString(ConfidencesNotMoreThanKey),
+		DiscoveryMode:          v.GetBool(DiscoveryModeKey),
 	}
 
 	validate := validator.New()

@@ -17,4 +17,6 @@ const (
 
 	ConfidencesNotLessThanKey = "confidences-not-less-than"
 	ConfidencesNotMoreThanKey = "confidences-not-more-than"
+
+	DiscoveryModeKey = "discovery-mode"
 )

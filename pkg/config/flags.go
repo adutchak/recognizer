@@ -14,6 +14,7 @@ var DefaultConfig = Config{
 	MqttPort:                 1883,
 	MqttRecognizedMessage:    `{"message": "recognized"}`,
 	MqttNotRecognizedMessage: `{"message": "not_recognized"}`,
+	DiscoveryMode:            false,
 }
 
 func BuildFlagSet() *pflag.FlagSet {
@@ -32,5 +33,7 @@ func BuildFlagSet() *pflag.FlagSet {
 	fs.Float32(SimilarityThresholdKey, DefaultConfig.SimilarityThreshold, "specifies the minimal similarity threshold")
 	fs.String(ConfidencesNotLessThanKey, "", "specifies labels whose recognized confidence should not be less than threshold, example: \"Photography:98.0,Fisheye:60.0,Computer Hardware:40.0\"")
 	fs.String(ConfidencesNotMoreThanKey, "", "specifies labels whose recognized confidence should be more than threshold, example: \"Electronics:90.0,Phone:40.0,Computer Hardware:40.0\"")
+
+	fs.Bool(DiscoveryModeKey, DefaultConfig.DiscoveryMode, "mode which simply prints recognized information")
 	return fs
 }
