@@ -13,15 +13,16 @@ import (
 )
 
 type Config struct {
-	DiscoveryMode            bool   `json:"discoveryMode"`
-	MqttTopic                string `json:"mqttTopic" validate:"required"`
-	MqttBroker               string `json:"mqttBroker" validate:"required"`
-	MqttPort                 int    `json:"mqttPort"`
-	MqttClientId             string `json:"mqttClientId" validate:"required"`
-	MqttUsername             string `json:"mqttUsername" validate:"required"`
-	MqttPassword             string `json:"mqttPassword" validate:"required"`
-	MqttRecognizedMessage    string `json:"mqttRecognizedMessage"`
-	MqttNotRecognizedMessage string `json:"mqttNotRecognizedMessage"`
+	DiscoveryMode             bool   `json:"discoveryMode"`
+	DiscoveryLabelsFileOutput string `json:"discoveryLabelsFileOutput"`
+	MqttTopic                 string `json:"mqttTopic" validate:"required"`
+	MqttBroker                string `json:"mqttBroker" validate:"required"`
+	MqttPort                  int    `json:"mqttPort"`
+	MqttClientId              string `json:"mqttClientId" validate:"required"`
+	MqttUsername              string `json:"mqttUsername" validate:"required"`
+	MqttPassword              string `json:"mqttPassword" validate:"required"`
+	MqttRecognizedMessage     string `json:"mqttRecognizedMessage"`
+	MqttNotRecognizedMessage  string `json:"mqttNotRecognizedMessage"`
 
 	TargetImagePath     string   `json:"targetImagePath" validate:"required"`
 	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
@@ -78,12 +79,13 @@ func Parse(args []string) (*Config, error) {
 		MqttRecognizedMessage:    v.GetString(MqttRecognizedMessageKey),
 		MqttNotRecognizedMessage: v.GetString(MqttNotRecognizedMessageKey),
 
-		TargetImagePath:        v.GetString(TargetImagePathKey),
-		SampleImagePaths:       v.GetStringSlice(SampleImagePathsKey),
-		SimilarityThreshold:    float32(v.GetFloat64(SimilarityThresholdKey)),
-		ConfidencesNotLessThan: v.GetString(ConfidencesNotLessThanKey),
-		ConfidencesNotMoreThan: v.GetString(ConfidencesNotMoreThanKey),
-		DiscoveryMode:          v.GetBool(DiscoveryModeKey),
+		TargetImagePath:           v.GetString(TargetImagePathKey),
+		SampleImagePaths:          v.GetStringSlice(SampleImagePathsKey),
+		SimilarityThreshold:       float32(v.GetFloat64(SimilarityThresholdKey)),
+		ConfidencesNotLessThan:    v.GetString(ConfidencesNotLessThanKey),
+		ConfidencesNotMoreThan:    v.GetString(ConfidencesNotMoreThanKey),
+		DiscoveryMode:             v.GetBool(DiscoveryModeKey),
+		DiscoveryLabelsFileOutput: v.GetString(DiscoveryLabelsFileOutputKey),
 	}
 
 	validate := validator.New()
