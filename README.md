@@ -50,3 +50,6 @@ services:
     - "RECOGNIZED_MESSAGE={\"message\": \"recognized\"}"
     - "NOT_RECOGNIZED_MESSAGE={\"message\": \"not_recognized\"}"
 ```
+
+# TODO
+Make this service as Home Assistant Addon: https://developers.home-assistant.io/docs/add-ons
