@@ -20,7 +20,8 @@ The application retrieves image labels (i.e. glasses, hat, floor etc). Each retr
 Also, you can set `CONFIDENCES_NOT_LESS_THAN` to make sure that certain labels exist on the picture.
 
 # DISCOVERY_MODE
-In order to retrieve the above described labels, you can enable `DISCOVERY_MODE`, this will not push any MQTT messages, but just output the recognized labels.
+In order to retrieve the above described labels, you can enable `DISCOVERY_MODE`, this will not push any MQTT messages, but just output the recognized labels.   
+Optionally, you can add `DISCOVERY_LABELS_FILE_OUTPUT` env var and system will save the labels to a separate file.
 
 # Docker-compose example:
 ```
