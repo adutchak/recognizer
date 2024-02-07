@@ -114,6 +114,14 @@ func main() {
 			}
 			if configuration.DiscoveryMode {
 				l.Infof("DetectLabels output:\n%s", awsutil.Prettify(labelsOutput))
+				if configuration.DiscoveryLabelsFileOutput != "" {
+					l.Infof("writing labels to a file: %s", configuration.DiscoveryLabelsFileOutput)
+					err = writeToFile(configuration.DiscoveryLabelsFileOutput, awsutil.Prettify(labelsOutput))
+					if err != nil {
+						l.Error(err)
+						continue
+					}
+				}
 			}
 
 			var labelsPassed bool
@@ -253,4 +261,18 @@ func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confi
 		return false, fmt.Errorf("label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
 	}
 	return true, nil
+}
+
+func writeToFile(filename string, text string) error {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(text); err != nil {
+		return err
+	}
+	return nil
 }
