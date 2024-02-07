@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/adutchak/recognizer/pkg/aws"
@@ -144,32 +145,43 @@ func main() {
 			}
 
 			atLeastOneMatchFound := false
+			// use once in order to atomically change atLeastOneMatchFound variable
+			var atLeastOneMatchFoundOnce sync.Once
+			// use wait groups in order to process images in parallel
+			var wg sync.WaitGroup
+			wg.Add(len(rekognitionInputs))
+
 			for _, rekognitionInput := range rekognitionInputs {
-				comparedFileName := ""
-				compareFacesInput := rekognition.CompareFacesInput{}
-				for filename, input := range rekognitionInput {
-					input.SourceImage = &sourceImage
-					compareFacesInput = input
-					comparedFileName = filename
-				}
-
-				output, err := recognizeClient.CompareFaces(ctx, &compareFacesInput)
-				if err != nil {
-					l.Error("Error comparing images", err)
-					continue
-				}
-
-				if len(output.FaceMatches) > 0 {
-					atLeastOneMatchFound = true
-					l.Infof("recognized snapshot as %s", comparedFileName)
-					if !configuration.DiscoveryMode {
-						publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttRecognizedMessage)
+				go func(rekognitionInput map[string]rekognition.CompareFacesInput) {
+					defer wg.Done()
+					comparedFileName := ""
+					compareFacesInput := rekognition.CompareFacesInput{}
+					for filename, input := range rekognitionInput {
+						input.SourceImage = &sourceImage
+						compareFacesInput = input
+						comparedFileName = filename
 					}
-					break
-				} else {
-					l.Warnf("did not recognize the caller as %s", comparedFileName)
-				}
+
+					output, err := recognizeClient.CompareFaces(ctx, &compareFacesInput)
+					if err != nil {
+						l.Error("Error comparing faces", err)
+						return
+					}
+
+					if len(output.FaceMatches) > 0 {
+						atLeastOneMatchFoundOnce.Do(func() {
+							atLeastOneMatchFound = true
+							l.Infof("recognized snapshot as %s", comparedFileName)
+							if !configuration.DiscoveryMode {
+								publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttRecognizedMessage)
+							}
+						})
+					} else {
+						l.Warnf("did not recognize the caller as %s", comparedFileName)
+					}
+				}(rekognitionInput)
 			}
+
 			if !atLeastOneMatchFound {
 				if !configuration.DiscoveryMode {
 					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
