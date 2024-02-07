@@ -189,6 +189,7 @@ func main() {
 					}
 				}(rekognitionInput)
 			}
+			wg.Wait()
 
 			if !atLeastOneMatchFound {
 				if !configuration.DiscoveryMode {
