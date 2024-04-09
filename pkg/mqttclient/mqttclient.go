@@ -37,3 +37,10 @@ func GetMqttClient(configuration *config.Config) (mqtt.Client, error) {
 	}
 	return client, nil
 }
+
+func ConnectToMqtt(client mqtt.Client) error {
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+	return nil
+}

@@ -75,8 +75,9 @@ func main() {
 				continue
 			}
 
-			if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-				l.Error("Error connecting to MQTT", token.Error())
+			err = mqttclient.ConnectToMqtt(mqttClient)
+			if err != nil {
+				l.Error("Failed to connect to MQTT", err)
 			}
 			defer mqttClient.Disconnect(250)
 
