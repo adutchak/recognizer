@@ -23,6 +23,7 @@ func GetMqttClient(configuration *config.Config) (mqtt.Client, error) {
 	broker := configuration.MqttBroker
 	port := configuration.MqttPort
 	opts := mqtt.NewClientOptions()
+	opts.SetOrderMatters(false)
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
 	opts.SetClientID(configuration.MqttClientId)
 	opts.SetUsername(configuration.MqttUsername)

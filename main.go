@@ -59,6 +59,10 @@ func main() {
 	}
 	l.Info("starting recognizer")
 
+	mqttClient, err := mqttclient.GetMqttClient(configuration)
+	if err != nil {
+		l.Errorf("Error getting mqttClient %v", err)
+	}
 	doneChan := make(chan bool)
 	go func(doneChan chan bool) {
 		defer func() {
@@ -70,11 +74,11 @@ func main() {
 				l.Error(err)
 				continue
 			}
-			mqttClient, err := mqttclient.GetMqttClient(configuration)
-			if err != nil {
-				l.Errorf("Error getting mqttClient %v", err)
-				continue
+
+			if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+				l.Error("Error connecting to MQTT", token.Error())
 			}
+			defer mqttClient.Disconnect(250)
 
 			sourceBytes, err := os.ReadFile(configuration.TargetImagePath)
 			if err != nil {
@@ -196,8 +200,6 @@ func main() {
 					publishMqttMessage(mqttClient, configuration.MqttTopic, configuration.MqttNotRecognizedMessage)
 				}
 			}
-
-			mqttClient.Disconnect(250)
 		}
 	}(doneChan)
 
@@ -210,7 +212,6 @@ func publishMqttMessage(client mqtt.Client, topic string, message interface{}) {
 	token := client.Publish(topic, 0, false, message)
 	token.Wait()
 	l.Infof("published message (%s) to MQTT topic %s", message, topic)
-	client.Disconnect(250)
 }
 
 func waitForFile(filePath string) error {
@@ -265,7 +266,7 @@ func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confi
 }
 
 func writeToFile(filename string, text string) error {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return err
 	}
