@@ -19,7 +19,7 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	fmt.Printf("Connect lost: %v", err)
 }
 
-func GetMqttClient(configuration *config.Config) (mqtt.Client, error) {
+func GetMqttClient(configuration *config.Config) mqtt.Client {
 	broker := configuration.MqttBroker
 	port := configuration.MqttPort
 	opts := mqtt.NewClientOptions()
@@ -32,10 +32,7 @@ func GetMqttClient(configuration *config.Config) (mqtt.Client, error) {
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return client, token.Error()
-	}
-	return client, nil
+	return client
 }
 
 func ConnectToMqtt(client mqtt.Client) error {

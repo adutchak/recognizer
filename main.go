@@ -59,10 +59,7 @@ func main() {
 	}
 	l.Info("starting recognizer")
 
-	mqttClient, err := mqttclient.GetMqttClient(configuration)
-	if err != nil {
-		l.Errorf("Error getting mqttClient %v", err)
-	}
+	mqttClient := mqttclient.GetMqttClient(configuration)
 	doneChan := make(chan bool)
 	go func(doneChan chan bool) {
 		defer func() {
@@ -75,11 +72,15 @@ func main() {
 				continue
 			}
 
+			l.Info("Connecting to MQTT server")
 			err = mqttclient.ConnectToMqtt(mqttClient)
 			if err != nil {
 				l.Error("Failed to connect to MQTT", err)
 			}
-			defer mqttClient.Disconnect(250)
+			defer func() {
+				l.Info("Disconnecting from MQTT server")
+				mqttClient.Disconnect(250)
+			}()
 
 			sourceBytes, err := os.ReadFile(configuration.TargetImagePath)
 			if err != nil {
