@@ -27,6 +27,7 @@ func main() {
 		l.Fatalf("could not load the configuration, %v", err)
 	}
 	l.Infof("loaded config %s", awsutil.Prettify(configuration))
+	mqttClient := mqttclient.GetMqttClient(configuration)
 
 	recognizeClient, err := aws.GetRekognitionClient()
 	if err != nil {
@@ -59,7 +60,6 @@ func main() {
 	}
 	l.Info("starting recognizer")
 
-	mqttClient := mqttclient.GetMqttClient(configuration)
 	doneChan := make(chan bool)
 	go func(doneChan chan bool) {
 		defer func() {
@@ -71,17 +71,6 @@ func main() {
 				l.Error(err)
 				continue
 			}
-
-			l.Info("Connecting to MQTT server")
-			err = mqttclient.ConnectToMqtt(mqttClient)
-			if err != nil {
-				l.Error("Failed to connect to MQTT", err)
-			}
-			defer func() {
-				l.Info("Disconnecting from MQTT server")
-				mqttClient.Disconnect(250)
-			}()
-
 			sourceBytes, err := os.ReadFile(configuration.TargetImagePath)
 			if err != nil {
 				l.Errorf("Error reading file %s: %v", configuration.TargetImagePath, err)
@@ -209,8 +198,13 @@ func main() {
 }
 
 func publishMqttMessage(client mqtt.Client, topic string, message interface{}) {
-	ctx := context.Background()
-	l := logging.WithContext(ctx)
+	l := logging.WithContext(context.Background())
+	err := mqttclient.ConnectToMqtt(client)
+	if err != nil {
+		l.Error("Failed to connect to MQTT", err)
+	}
+	defer client.Disconnect(250)
+
 	token := client.Publish(topic, 0, false, message)
 	token.Wait()
 	l.Infof("published message (%s) to MQTT topic %s", message, topic)
