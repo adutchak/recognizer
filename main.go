@@ -66,7 +66,7 @@ func main() {
 			doneChan <- true
 		}()
 		for {
-			err := waitForFile(configuration.TargetImagePath)
+			err := waitForFile(configuration.TargetImagePath, configuration.TargetImageVerifyEveryMilliseconds)
 			if err != nil {
 				l.Error(err)
 				continue
@@ -210,11 +210,11 @@ func publishMqttMessage(client mqtt.Client, topic string, message interface{}) {
 	l.Infof("published message (%s) to MQTT topic %s", message, topic)
 }
 
-func waitForFile(filePath string) error {
+func waitForFile(filePath string, verifyFrequencyMs int) error {
 	for {
 		_, err := os.Stat(filePath)
 		if err != nil {
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Millisecond * time.Duration(verifyFrequencyMs))
 			continue
 		}
 		break

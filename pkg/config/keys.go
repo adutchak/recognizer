@@ -18,6 +18,7 @@ const (
 	ConfidencesNotLessThanKey = "confidences-not-less-than"
 	ConfidencesNotMoreThanKey = "confidences-not-more-than"
 
-	DiscoveryModeKey             = "discovery-mode"
-	DiscoveryLabelsFileOutputKey = "discovery-labels-file-output"
+	DiscoveryModeKey                      = "discovery-mode"
+	DiscoveryLabelsFileOutputKey          = "discovery-labels-file-output"
+	TargetImageVerifyEveryMillisecondsKey = "target-image-verify-every-milliseconds"
 )

@@ -9,12 +9,13 @@ const (
 )
 
 var DefaultConfig = Config{
-	MqttTopic:                "enterance/recognizer",
-	SimilarityThreshold:      95,
-	MqttPort:                 1883,
-	MqttRecognizedMessage:    `{"message": "recognized"}`,
-	MqttNotRecognizedMessage: `{"message": "not_recognized"}`,
-	DiscoveryMode:            false,
+	MqttTopic:                          "enterance/recognizer",
+	SimilarityThreshold:                95,
+	MqttPort:                           1883,
+	MqttRecognizedMessage:              `{"message": "recognized"}`,
+	MqttNotRecognizedMessage:           `{"message": "not_recognized"}`,
+	DiscoveryMode:                      false,
+	TargetImageVerifyEveryMilliseconds: 1000,
 }
 
 func BuildFlagSet() *pflag.FlagSet {
@@ -35,5 +36,6 @@ func BuildFlagSet() *pflag.FlagSet {
 	fs.String(ConfidencesNotMoreThanKey, "", "specifies labels whose recognized confidence should be more than threshold, example: \"Electronics:90.0,Phone:40.0,Computer Hardware:40.0\"")
 	fs.String(DiscoveryLabelsFileOutputKey, "", "specifies a path to a file where discovered labels will be written")
 	fs.Bool(DiscoveryModeKey, DefaultConfig.DiscoveryMode, "mode which simply prints recognized information")
+	fs.Int(TargetImageVerifyEveryMillisecondsKey, DefaultConfig.TargetImageVerifyEveryMilliseconds, "specifies the interval in milliseconds to verify the target image")
 	return fs
 }

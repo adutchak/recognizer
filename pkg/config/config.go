@@ -31,6 +31,8 @@ type Config struct {
 	ConfidencesNotLessThan string `json:"confidencesNotLessThan"`
 	ConfidencesNotMoreThan string `json:"confidencesNotMoreThan"`
 
+	TargetImageVerifyEveryMilliseconds int `json:"targetImageVerifyEveryMilliseconds"`
+
 	ConfidencesNotLessThanNormalized map[string]string `json:"confidencesNotLessThanNormalized"`
 	ConfidencesNotMoreThanNormalized map[string]string `json:"confidencesNotMoreThanNormalized"`
 }
@@ -79,13 +81,14 @@ func Parse(args []string) (*Config, error) {
 		MqttRecognizedMessage:    v.GetString(MqttRecognizedMessageKey),
 		MqttNotRecognizedMessage: v.GetString(MqttNotRecognizedMessageKey),
 
-		TargetImagePath:           v.GetString(TargetImagePathKey),
-		SampleImagePaths:          v.GetStringSlice(SampleImagePathsKey),
-		SimilarityThreshold:       float32(v.GetFloat64(SimilarityThresholdKey)),
-		ConfidencesNotLessThan:    v.GetString(ConfidencesNotLessThanKey),
-		ConfidencesNotMoreThan:    v.GetString(ConfidencesNotMoreThanKey),
-		DiscoveryMode:             v.GetBool(DiscoveryModeKey),
-		DiscoveryLabelsFileOutput: v.GetString(DiscoveryLabelsFileOutputKey),
+		TargetImagePath:                    v.GetString(TargetImagePathKey),
+		SampleImagePaths:                   v.GetStringSlice(SampleImagePathsKey),
+		SimilarityThreshold:                float32(v.GetFloat64(SimilarityThresholdKey)),
+		ConfidencesNotLessThan:             v.GetString(ConfidencesNotLessThanKey),
+		ConfidencesNotMoreThan:             v.GetString(ConfidencesNotMoreThanKey),
+		DiscoveryMode:                      v.GetBool(DiscoveryModeKey),
+		DiscoveryLabelsFileOutput:          v.GetString(DiscoveryLabelsFileOutputKey),
+		TargetImageVerifyEveryMilliseconds: v.GetInt(TargetImageVerifyEveryMillisecondsKey),
 	}
 
 	validate := validator.New()
