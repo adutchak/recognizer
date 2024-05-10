@@ -4,13 +4,13 @@ A simple service used to recognize faces using AWS rekognition API. Supposed to 
 # RUN_MODE
 The application can run in 2 modes: api and file_watcher. Below the description of each.
 
-# RUN_MODE:file_watcher - api High level flow
+# RUN_MODE:file_watcher - flow
 1. Home Assistant makes WebRtc snapshot and locates it in the folder.
 2. The folder where the snapshot is located, should be shared (SMB) with a host where we run this service. Then that folder is mounted as `/mnt/` into the app's container.
 3. As soon as `TARGET_IMAGE_PATH` file is created, recognizer will start comparing it to images specified in `SAMPLE_IMAGE_PATHS`.
 4. Base on recognition results, a message is pushes an MQTT message (`RECOGNIZED_MESSAGE`,`NOT_RECOGNIZED_MESSAGE`) to `MQTT_TOPIC`.
 
-# RUN_MODE:api - api High level flow
+# RUN_MODE:api - flow
 1. Home Assistant makes a POST api call to the service and includes webrtc_url in the payload (example: `{"webrtc_url": "rtsp://username:password@192.168.1.120:554/cam/realmonitor?channel=1&subtype=0"}`). 
 2. The recognizer takes the snapshot from the stream.
 4. Base on recognition results, a message is pushes an MQTT message (`RECOGNIZED_MESSAGE`,`NOT_RECOGNIZED_MESSAGE`) to `MQTT_TOPIC`.
