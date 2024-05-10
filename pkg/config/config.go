@@ -24,7 +24,8 @@ type Config struct {
 	MqttRecognizedMessage     string `json:"mqttRecognizedMessage"`
 	MqttNotRecognizedMessage  string `json:"mqttNotRecognizedMessage"`
 
-	TargetImagePath     string   `json:"targetImagePath" validate:"required"`
+	RunMode             string   `json:"runMode" validate:"oneof=file_watcher api"`
+	TargetImagePath     string   `json:"targetImagePath"`
 	SampleImagePaths    []string `json:"sampleImagePaths" validate:"required"`
 	SimilarityThreshold float32  `json:"similarityThreshold"`
 
@@ -89,6 +90,7 @@ func Parse(args []string) (*Config, error) {
 		DiscoveryMode:                      v.GetBool(DiscoveryModeKey),
 		DiscoveryLabelsFileOutput:          v.GetString(DiscoveryLabelsFileOutputKey),
 		TargetImageVerifyEveryMilliseconds: v.GetInt(TargetImageVerifyEveryMillisecondsKey),
+		RunMode:                            v.GetString(RunModeKey),
 	}
 
 	validate := validator.New()
@@ -115,6 +117,10 @@ func Parse(args []string) (*Config, error) {
 	}
 	if conf.DiscoveryMode {
 		l.Warn("RUNNING APPLICATION IN DISCOVERY MODE")
+	}
+	// for file watcher mode, we need to have a target image path
+	if conf.RunMode == "file_watcher" && len(conf.TargetImagePath) == 0 {
+		l.Fatalf("Missing required attributes %s\n", TargetImagePathKey)
 	}
 	return conf, nil
 }

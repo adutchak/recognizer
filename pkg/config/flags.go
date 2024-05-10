@@ -16,6 +16,7 @@ var DefaultConfig = Config{
 	MqttNotRecognizedMessage:           `{"message": "not_recognized"}`,
 	DiscoveryMode:                      false,
 	TargetImageVerifyEveryMilliseconds: 1000,
+	RunMode:                            "file_watcher",
 }
 
 func BuildFlagSet() *pflag.FlagSet {
@@ -37,5 +38,6 @@ func BuildFlagSet() *pflag.FlagSet {
 	fs.String(DiscoveryLabelsFileOutputKey, "", "specifies a path to a file where discovered labels will be written")
 	fs.Bool(DiscoveryModeKey, DefaultConfig.DiscoveryMode, "mode which simply prints recognized information")
 	fs.Int(TargetImageVerifyEveryMillisecondsKey, DefaultConfig.TargetImageVerifyEveryMilliseconds, "specifies the interval in milliseconds to verify the target image")
+	fs.String(RunModeKey, DefaultConfig.RunMode, "specifies the run mode")
 	return fs
 }

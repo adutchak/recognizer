@@ -21,4 +21,5 @@ const (
 	DiscoveryModeKey                      = "discovery-mode"
 	DiscoveryLabelsFileOutputKey          = "discovery-labels-file-output"
 	TargetImageVerifyEveryMillisecondsKey = "target-image-verify-every-milliseconds"
+	RunModeKey                            = "run-mode"
 )
