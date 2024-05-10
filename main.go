@@ -30,7 +30,7 @@ type recognizer struct {
 	rekognitionInputs []map[string]rekognition.CompareFacesInput
 }
 
-type RecognizeInput struct {
+type RecognizeApiInput struct {
 	WebRtcUrl string `json:"webrtc_url"`
 }
 
@@ -44,9 +44,9 @@ func (r *recognizer) new() {
 	// load configuration
 	configuration, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("could not load the configuration, %v", err)
+		log.Fatalf("Could not load the configuration, %v", err)
 	}
-	log.Infof("loaded config %s", awsutil.Prettify(configuration))
+	log.Infof("Loaded config %s", awsutil.Prettify(configuration))
 	r.configuration = configuration
 
 	// initialize mqtt client
@@ -56,7 +56,7 @@ func (r *recognizer) new() {
 	// initialize AWS recognize client
 	recognizeClient, err := aws.GetRekognitionClient()
 	if err != nil {
-		message := "cannot initialize AWS recognize client"
+		message := "Cannot initialize AWS recognize client"
 		log.Fatal(message)
 	}
 	r.recognizeClient = recognizeClient
@@ -64,7 +64,7 @@ func (r *recognizer) new() {
 	// get rekognition inputs
 	rekognitionInputs, err := getRekognitionInputs(ctx, configuration)
 	if err != nil {
-		log.Fatal("cannot get rekognition inputs")
+		log.Fatal("Cannot get rekognition inputs")
 	}
 	r.rekognitionInputs = rekognitionInputs
 }
@@ -74,7 +74,7 @@ func main() {
 	log := logging.WithContext(ctx)
 	configuration, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("could not load the configuration, %v", err)
+		log.Fatalf("Could not load the configuration, %v", err)
 	}
 	switch configuration.RunMode {
 	case "file_watcher":
@@ -93,7 +93,7 @@ func runApi() {
 	recognizer.new()
 
 	// register all the handlers here
-	v1.HandleFunc("/recognize", recognizer.WebRtcHandler).Methods("POST")
+	v1.HandleFunc("/recognize", recognizer.RecognizeWebRtcApiHandler).Methods("POST")
 
 	server := &http.Server{
 		Addr:         ":8082",
@@ -111,11 +111,11 @@ func runApi() {
 	select {}
 }
 
-func (r *recognizer) WebRtcHandler(writer http.ResponseWriter, request *http.Request) {
+func (r *recognizer) RecognizeWebRtcApiHandler(writer http.ResponseWriter, request *http.Request) {
 	log := logging.WithContext(context.TODO())
 	log.Info("Received API request to recognize")
 	ctx := context.Background()
-	var recognizeInput RecognizeInput
+	var recognizeInput RecognizeApiInput
 	err := json.NewDecoder(request.Body).Decode(&recognizeInput)
 	if err != nil {
 		message := "Invalid request payload"
@@ -136,22 +136,21 @@ func (r *recognizer) WebRtcHandler(writer http.ResponseWriter, request *http.Req
 	defer img.Close()
 
 	if ok := webcam.Read(&img); !ok {
-		message := fmt.Sprintf("cannot read device %v\n", recognizeInput.WebRtcUrl)
+		message := fmt.Sprintf("Cannot read device %v\n", recognizeInput.WebRtcUrl)
 		respondWithError(writer, http.StatusBadRequest, message)
 		return
 	}
 	if img.Empty() {
-		message := fmt.Sprintf("no image on device %v\n", recognizeInput.WebRtcUrl)
+		message := fmt.Sprintf("No image on device %v\n", recognizeInput.WebRtcUrl)
 		respondWithError(writer, http.StatusBadRequest, message)
 		return
 	}
 	sourceBuff, err := gocv.IMEncode(gocv.JPEGFileExt, img)
 	if err != nil {
-		message := fmt.Sprint("cannot IMEncode image")
+		message := fmt.Sprint("Cannot IMEncode image")
 		respondWithError(writer, http.StatusBadRequest, message)
 		return
 	}
-	log.Info("Took a snapshot")
 	err = r.processImage(ctx, sourceBuff.GetBytes())
 	if err != nil {
 		log.Error(err)
@@ -171,7 +170,7 @@ func runFileWatcher() {
 	recognizer := recognizer{}
 	recognizer.new()
 
-	log.Info("starting recognizer")
+	log.Info("Starting recognizer")
 
 	doneChan := make(chan bool)
 	go func(doneChan chan bool) {
@@ -222,7 +221,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 		return err
 	}
 	if len(output.FaceDetails) == 0 {
-		message := fmt.Sprintf("no faces detected in the image: %s", r.configuration.TargetImagePath)
+		message := fmt.Sprintf("No faces detected in the image: %s", r.configuration.TargetImagePath)
 		log.Errorf(message)
 		if !r.configuration.DiscoveryMode {
 			publishMqttMessage(r.mqttClient, r.configuration.MqttTopic, r.configuration.MqttNotRecognizedMessage)
@@ -241,7 +240,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 	if r.configuration.DiscoveryMode {
 		log.Infof("DetectLabels output:\n%s", awsutil.Prettify(labelsOutput))
 		if r.configuration.DiscoveryLabelsFileOutput != "" {
-			log.Infof("writing labels to a file: %s", r.configuration.DiscoveryLabelsFileOutput)
+			log.Infof("Writing labels to a file: %s", r.configuration.DiscoveryLabelsFileOutput)
 			err = writeToFile(r.configuration.DiscoveryLabelsFileOutput, awsutil.Prettify(labelsOutput))
 			if err != nil {
 				log.Error(err)
@@ -270,7 +269,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 	}
 
 	if !labelsPassed {
-		message := "some of the labels did not pass confidence level"
+		message := "Some of the labels did not pass confidence level"
 		log.Error(message)
 		if !r.configuration.DiscoveryMode {
 			publishMqttMessage(r.mqttClient, r.configuration.MqttTopic, r.configuration.MqttNotRecognizedMessage)
@@ -311,7 +310,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 					}
 				})
 			} else {
-				log.Warnf("did not recognize the caller as %s", comparedFileName)
+				log.Warnf("Did not recognize the caller as %s", comparedFileName)
 			}
 		}(rekognitionInput)
 	}
@@ -320,7 +319,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 	if !atLeastOneMatchFound {
 		if !r.configuration.DiscoveryMode {
 			publishMqttMessage(r.mqttClient, r.configuration.MqttTopic, r.configuration.MqttNotRecognizedMessage)
-			return fmt.Errorf("did not recognize the caller")
+			return fmt.Errorf("Did not recognize the caller")
 		}
 	}
 	return nil
@@ -363,7 +362,7 @@ func publishMqttMessage(client mqtt.Client, topic string, message interface{}) {
 
 	token := client.Publish(topic, 0, false, message)
 	token.Wait()
-	log.Infof("published message (%s) to MQTT topic %s", message, topic)
+	log.Infof("Published message (%s) to MQTT topic %s", message, topic)
 }
 
 func waitForFile(filePath string, verifyFrequencyMs int) error {
@@ -387,7 +386,7 @@ func removeFile(filename string) error {
 		log.Error(err)
 		return err
 	}
-	log.Infof("removed file %s", filename)
+	log.Infof("Removed file %s", filename)
 	return nil
 }
 
@@ -400,7 +399,7 @@ func verifyLabelConfidenceNotLessThan(label types.Label, labelName string, confi
 	}
 
 	if *label.Name == labelName && *label.Confidence < float32(confidenceFloat64) {
-		return false, fmt.Errorf("label %s has confidence less than %s (%f)", labelName, confidence, *label.Confidence)
+		return false, fmt.Errorf("Label %s has confidence less than %s (%f)", labelName, confidence, *label.Confidence)
 	}
 	return true, nil
 }
@@ -414,7 +413,7 @@ func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confi
 	}
 
 	if *label.Name == labelName && *label.Confidence > float32(confidenceFloat64) {
-		return false, fmt.Errorf("label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
+		return false, fmt.Errorf("Label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
 	}
 	return true, nil
 }
