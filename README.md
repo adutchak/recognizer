@@ -58,6 +58,7 @@ services:
     - CONFIDENCES_NOT_MORE_THAN=Electronics:90.0,Phone:40.0,Computer:90.0,Screen:40.0,Computer Hardware:40.0,Hardware:40.0
     - "RECOGNIZED_MESSAGE={\"message\": \"recognized\"}"
     - "NOT_RECOGNIZED_MESSAGE={\"message\": \"not_recognized\"}"
+    - RUN_MODE: file_watcher
 ```
 
 # TODO
