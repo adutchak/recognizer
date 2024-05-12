@@ -235,6 +235,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 	labelsOutput, err := r.recognizeClient.DetectLabels(ctx, &detectLabelsInputs)
 	if err != nil {
 		log.Error("Error detecting labels", err)
+		publishMqttMessage(r.mqttClient, r.configuration.MqttTopic, r.configuration.MqttNotRecognizedMessage)
 		return err
 	}
 	if r.configuration.DiscoveryMode {
@@ -254,16 +255,16 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 		for labelName, threshold := range r.configuration.ConfidencesNotLessThanNormalized {
 			labelsPassed, err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
 			if err != nil {
+				// No return here, because we want to check all the labels
 				log.Error(err)
-				return err
 			}
 		}
 
 		for labelName, threshold := range r.configuration.ConfidencesNotMoreThanNormalized {
 			labelsPassed, err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
 			if err != nil {
+				// No return here, because we want to check all the labels
 				log.Error(err)
-				return err
 			}
 		}
 	}
