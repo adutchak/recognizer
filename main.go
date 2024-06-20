@@ -250,26 +250,31 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 		}
 	}
 
-	var labelsPassed bool
+	labelsPassed := 0
+	labelsTotal := len(r.configuration.ConfidencesNotLessThanNormalized) + len(r.configuration.ConfidencesNotMoreThanNormalized)
 	for _, label := range labelsOutput.Labels {
 		for labelName, threshold := range r.configuration.ConfidencesNotLessThanNormalized {
-			labelsPassed, err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
+			err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
 			if err != nil {
 				// No return here, because we want to check all the labels
 				log.Error(err)
+			} else {
+				labelsPassed++
 			}
 		}
 
 		for labelName, threshold := range r.configuration.ConfidencesNotMoreThanNormalized {
-			labelsPassed, err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
+			err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
 			if err != nil {
 				// No return here, because we want to check all the labels
 				log.Error(err)
+			} else {
+				labelsPassed++
 			}
 		}
 	}
 
-	if !labelsPassed {
+	if labelsPassed != labelsTotal {
 		message := "Some of the labels did not pass confidence level"
 		log.Error(message)
 		if !r.configuration.DiscoveryMode {
@@ -391,32 +396,32 @@ func removeFile(filename string) error {
 	return nil
 }
 
-func verifyLabelConfidenceNotLessThan(label types.Label, labelName string, confidence string) (bool, error) {
+func verifyLabelConfidenceNotLessThan(label types.Label, labelName string, confidence string) error {
 	var confidenceFloat64 float64
 
 	confidenceFloat64, err := strconv.ParseFloat(confidence, 32)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if *label.Name == labelName && *label.Confidence < float32(confidenceFloat64) {
-		return false, fmt.Errorf("Label %s has confidence less than %s (%f)", labelName, confidence, *label.Confidence)
+		return fmt.Errorf("Label %s has confidence less than %s (%f)", labelName, confidence, *label.Confidence)
 	}
-	return true, nil
+	return nil
 }
 
-func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confidence string) (bool, error) {
+func verifyLabelConfidenceNotMoreThan(label types.Label, labelName string, confidence string) error {
 	var confidenceFloat64 float64
 
 	confidenceFloat64, err := strconv.ParseFloat(confidence, 32)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if *label.Name == labelName && *label.Confidence > float32(confidenceFloat64) {
-		return false, fmt.Errorf("Label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
+		return fmt.Errorf("Label %s has confidence more than %s (%f)", labelName, confidence, *label.Confidence)
 	}
-	return true, nil
+	return nil
 }
 
 func writeToFile(filename string, text string) error {
