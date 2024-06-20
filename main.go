@@ -250,37 +250,28 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 		}
 	}
 
-	labelsPassed := 0
-	labelsTotal := len(r.configuration.ConfidencesNotLessThanNormalized) + len(r.configuration.ConfidencesNotMoreThanNormalized)
+	labelsPassed := true
 	for _, label := range labelsOutput.Labels {
-		passed := false
-
 		for labelName, threshold := range r.configuration.ConfidencesNotLessThanNormalized {
 			err = verifyLabelConfidenceNotLessThan(label, labelName, threshold)
 			if err != nil {
+				labelsPassed = false
 				// No return here, because we want to check all the labels
 				log.Error(err)
-			} else {
-				passed = true
 			}
 		}
 
 		for labelName, threshold := range r.configuration.ConfidencesNotMoreThanNormalized {
 			err = verifyLabelConfidenceNotMoreThan(label, labelName, threshold)
 			if err != nil {
+				labelsPassed = false
 				// No return here, because we want to check all the labels
 				log.Error(err)
-			} else {
-				passed = true
 			}
-		}
-
-		if passed {
-			labelsPassed++
 		}
 	}
 
-	if labelsPassed != labelsTotal {
+	if !labelsPassed {
 		message := "Some of the labels did not pass confidence level"
 		log.Error(message)
 		if !r.configuration.DiscoveryMode {
