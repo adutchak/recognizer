@@ -274,7 +274,7 @@ func (r *recognizer) processImage(ctx context.Context, sourceBytes []byte) error
 				passed = true
 			}
 		}
-		
+
 		if passed {
 			labelsPassed++
 		}
